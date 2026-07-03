@@ -1,0 +1,41 @@
+.toggle-bar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  font-family: system-ui, sans-serif;
+}
+
+.toggle-btn {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eee;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.match-picker {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eee;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.match-picker optgroup,
+.match-picker option {
+  background: #1a1a1a;
+  color: #eee;
+}
