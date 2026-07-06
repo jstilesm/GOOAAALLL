@@ -31,12 +31,12 @@ export interface MatchSlot {
   stage: string;
   matchDate: string;
   maxMinute: number;
-  slotStart: number; // ms offset of this match's slot within the full cycle
+  slotStart: number;
 }
 
 export interface ScheduledShot {
   shot: Shot;
-  startOffset: number; // ms into the full cycle when this shot begins its flight
+  startOffset: number;
   startX: number;
   startY: number;
   endX: number;

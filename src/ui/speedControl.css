@@ -1,0 +1,29 @@
+.speed-control {
+  top: 90px;
+  right: 100px;
+  left: auto;
+  transform: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speed-control .speed-icon {
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.speed-control .label {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 42px;
+}
+
+.speed-control .hint {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+.speed-control.pulse {
+  background: rgba(255, 255, 255, 0.16);
+}

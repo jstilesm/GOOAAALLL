@@ -2,9 +2,13 @@ import p5 from 'p5';
 import type { Shot, MatchSlot, ScheduledShot } from '../types';
 import { teamColor, teamColorSet } from '../data/teamColors';
 import { drawTricolorBall } from './ballDesign';
+import { drawConfetti } from './confetti';
 import { buildMatchSlots } from '../utils/matchSlot';
 import { easeOutCubic, METER_TO_YARD } from '../utils/units';
 import { bezierPoint } from '../utils/bezierPoint';
+import { createSpeedControl } from '../ui/speedControl';
+import '../styles/theme.css';
+import './goalSketch.css';
 
 import { TIMING_CONFIG} from '../config/timing';
 import { GOAL_CONFIG } from '../config/goal';
@@ -15,12 +19,11 @@ const { perMatchDurationMs: PER_MATCH_DURATION_MS, flightMs: FLIGHT_MS, goalAfte
 /**
  * GOAL CAM
  * --------
- * A literal goal frame drawn at true proportions. Shots launch from a point
+ * Goal frame drawn at true proportions. Shots launch from a point
  * reflecting their real pitch distance/position and travel a curved path to
  * where they actually ended up — net, post, save, or wide/over.
  *
- * Matches play out sequentially, each in its own timed slot with a quiet
- * gap before the next kicks off. A scoreboard overlay tracks the live
+ * Matches play out sequentially, each in its own timed slot. A scoreboard overlay tracks the live
  * score and running match clock for whichever match is currently active.
  */
 
@@ -39,10 +42,16 @@ export function createGoalSketch(shots: Shot[]) {
     let clockLine: HTMLDivElement;
     let timeOffset = 0; // ms offset to jump to a specific match slot
 
+    // speed variables
+    let speed = 1;
+    let virtualElapsed = 0;
+    let lastMillis = 0;
+    let speedControl: ReturnType<typeof createSpeedControl>;
+
     function computeLayout() {
       canvasW = p.windowWidth * 0.92;
-      canvasH = p.windowHeight * 0.85; // leave room below for the scoreboard overlay
-      pxPerYard = canvasW / 80;;
+      canvasH = p.windowHeight * 0.85;
+      pxPerYard = canvasW / 80;
       goalBaselineY = canvasH * 0.35;
     }
 
@@ -62,8 +71,8 @@ export function createGoalSketch(shots: Shot[]) {
       return goalBaselineY - heightYards * pxPerYard;
     }
      function currentT(): number {
-      return ((p.millis() + timeOffset) % totalCycle + totalCycle) % totalCycle;
-    }
+  return ((virtualElapsed + timeOffset) % totalCycle + totalCycle) % totalCycle;
+}
 
     function jumpToMatch(matchId: number) {
       const slot = matchSlots.find((s) => s.matchId === matchId);
@@ -149,9 +158,9 @@ export function createGoalSketch(shots: Shot[]) {
         // Faint full path, tinted with the team's primary flag color
         p.noFill();
         const pathCol = p.color(colors[0]);
-        pathCol.setAlpha(35);
+        pathCol.setAlpha(75);
         p.stroke(pathCol);
-        p.strokeWeight(1);
+        p.strokeWeight(10);
         p.beginShape();
         const steps = 12;
         for (let i = 0; i <= steps * progress; i++) {
@@ -171,13 +180,18 @@ export function createGoalSketch(shots: Shot[]) {
         p.noStroke();
         if (s.shot.outcome === 'Goal') {
           // Glow bloom cycles through all three flag colors for a richer burst
-          for (let i = 4; i >= 1; i--) {
+          for (let i = 6; i >= 1; i--) {
             const glowCol = p.color(colors[i % 3]);
-            glowCol.setAlpha(25 * fade);
+            glowCol.setAlpha(22 * fade);
             p.fill(glowCol);
-            p.circle(s.endX, s.endY, i * 12);
+            p.circle(s.endX, s.endY, i * 16);
           }
           drawTricolorBall(p, s.endX, s.endY, 13, colors, 255 * fade);
+
+          // Confetti burst — deterministic per shot so it stays in sync
+          // regardless of playback speed or time-jumps.
+          const confettiSeed = s.shot.match_id * 1000 + Math.round(s.shot.minute * 10);
+          drawConfetti(p, s.endX, s.endY, colors, afterglowElapsed, window, confettiSeed);
         } else {
           drawTricolorBall(p, s.endX, s.endY, 8, colors, 180 * fade);
         }
@@ -186,29 +200,13 @@ export function createGoalSketch(shots: Shot[]) {
 
     function createOverlay() {
       overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.bottom = '20px';
-      overlay.style.left = '50%';
-      overlay.style.transform = 'translateX(-50%)';
-      overlay.style.zIndex = '10';
-      overlay.style.fontFamily = 'system-ui, sans-serif';
-      overlay.style.textAlign = 'center';
-      overlay.style.background = 'rgba(255,255,255,0.06)';
-      overlay.style.border = '1px solid rgba(255,255,255,0.15)';
-      overlay.style.borderRadius = '10px';
-      overlay.style.padding = '10px 24px';
-      overlay.style.color = '#eee';
-      overlay.style.minWidth = '260px';
+      overlay.className = 'panel scoreboard-overlay';
 
       scoreLine = document.createElement('div');
-      scoreLine.style.fontSize = '16px';
-      scoreLine.style.fontWeight = '600';
-      scoreLine.style.letterSpacing = '0.02em';
+      scoreLine.className = 'score-line';
 
       clockLine = document.createElement('div');
-      clockLine.style.fontSize = '12px';
-      clockLine.style.opacity = '0.6';
-      clockLine.style.marginTop = '2px';
+      clockLine.className = 'clock-line';
 
       overlay.appendChild(scoreLine);
       overlay.appendChild(clockLine);
@@ -251,19 +249,29 @@ export function createGoalSketch(shots: Shot[]) {
 
       buildSchedule();
       createOverlay();
+      speedControl = createSpeedControl(speed, (newSpeed) => {
+        speed = newSpeed;
+    });
 
       // Ensure the scoreboard overlay is cleaned up if the view is switched away from
       const originalRemove = p.remove.bind(p);
       p.remove = () => {
         overlay.remove();
+        speedControl.destroy();
         originalRemove();
       };
       (p as any).jumpToMatch = jumpToMatch;
 
+      lastMillis = p.millis();
       p.loop();
     };
 
     p.draw = () => {
+      const now = p.millis();
+      const dt = now - lastMillis;
+      lastMillis = now;
+      virtualElapsed += dt * speed;
+
       p.background(5, 5, 5);
       const t = currentT();
       const idx = Math.min(Math.floor(t / slotDuration), matchSlots.length - 1);

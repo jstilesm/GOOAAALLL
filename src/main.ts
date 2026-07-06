@@ -4,7 +4,7 @@ import { createGoalSketch } from './sketches/goalSketch';
 import { buildMatchSlots } from './utils/matchSlot';
 import { createMatchPicker } from './ui/matchPicker';
 import type { Shot } from './types';
-import "./styles/toggle-ui.css";
+import "./styles/theme.css";
 
 type ViewMode = 'goal';
 

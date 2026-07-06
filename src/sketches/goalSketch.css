@@ -1,0 +1,17 @@
+.scoreboard-overlay {
+  top: 90px;
+  min-width: 260px;
+  padding: 10px 24px;
+}
+ 
+.scoreboard-overlay .score-line {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+ 
+.scoreboard-overlay .clock-line {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 2px;
+}
