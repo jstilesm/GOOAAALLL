@@ -18,25 +18,42 @@ npm install
 npm run dev
 ```
 
-This opens a local dev server (usually `http://localhost:5173`)
-
 ## Project structure
 
 ```
 public/data/world_cup_2022_shots.csv   # raw shot data, fetched client-side
-src/types.ts                            # Shot interface
-src/data.ts                             # CSV loader
-src/sketch.ts                           # p5 sketch — the actual visual (start here)
-src/main.ts                             # entry point, boots the sketch
+
+src/
+  types.ts                    # Shot, MatchSlot, ScheduledShot interfaces
+  main.ts                     # entry point — loads data, builds match slots, mounts the sketch
+
+  data/
+    loadShots.ts              # CSV loader/parser (PapaParse), numeric/boolean coercion
+    teamColors.ts             # per-nation flag color triples + fallback lookup
+
+  sketches/
+    goalSketch.ts             # p5 sketch — the main visual (start here)
+    ballDesign.ts             # tricolor ball rendering
+    confetti.ts               # goal celebration particle burst (seeded PRNG)
+    goalSketch.css
+
+  ui/
+    matchPicker.ts            # "jump to match" dropdown
+    speedControl.ts           # playback speed control
+    speedControl.css
+
+  utils/
+    bezierPoint.ts            # quadratic Bezier interpolation for shot flight paths
+    matchSlot.ts              # groups shots by match, assigns each match a timeline slot
+    units.ts                  # easing + unit conversion helpers
+
+  config/
+    goal.ts                   # goal frame dimensions (yards)
+    timing.ts                 # playback timing constants (durations, gaps, afterglow)
+
+  styles/
+    theme.css
 ```
-
-## Current state
-
-`src/sketch.ts` has a literal, unstyled first pass: every shot drawn as a line from its
-origin to where it ended up, colored by outcome (gold = goal, blue = saved/on target, gray =
-off target/blocked), with opacity weighted by StatsBomb's xG value. This is scaffolding —
-the next step is developing an actual visual language on top of it (particle systems,
-accumulation/trails, sound, interactivity, whatever direction feels right).
 
 ## Future implementation updates
 
